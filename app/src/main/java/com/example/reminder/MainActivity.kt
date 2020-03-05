@@ -1,5 +1,7 @@
 package com.example.reminder
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +15,8 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import kotlinx.android.synthetic.main.item_reminder.*
+
+const val ADD_REMINDER_REQUEST_CODE = 100
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,18 +38,36 @@ class MainActivity : AppCompatActivity() {
         createItemTouchHelper().attachToRecyclerView(rvReminders)
 
         fab.setOnClickListener {
-            addReminder(etReminder.text.toString())
+            startAddActivity()
+        }
+    }
+
+    private fun startAddActivity(){
+        val intent = Intent(this, AddActivity::class.java)
+        startActivityForResult(intent, ADD_REMINDER_REQUEST_CODE)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == Activity.RESULT_OK){
+            when(requestCode){
+                ADD_REMINDER_REQUEST_CODE -> {
+                    val reminder = data!!.getParcelableExtra<Reminder>(EXTRA_REMINDER)
+                    reminders.add(reminder)
+                    reminderAdaptor.notifyDataSetChanged()
+                }
+            }
         }
     }
 
     private fun addReminder(reminder: String){
-        if (reminder.isNotBlank()){
-            reminders.add((Reminder((reminder))))
-            reminderAdaptor.notifyDataSetChanged()
-            etReminder.text?.clear()
-        } else{
-            Snackbar.make(etReminder, "You must fill in the input field!", Snackbar.LENGTH_SHORT).show()
-        }
+    //    if (reminder.isNotBlank()){
+    //        reminders.add((Reminder((reminder))))
+    //        reminderAdaptor.notifyDataSetChanged()
+    //        etReminder.text?.clear()
+    //    } else{
+    //        Snackbar.make(etReminder, "You must fill in the input field!", Snackbar.LENGTH_SHORT).show()
+    //    }
     }
 
     private fun createItemTouchHelper() : ItemTouchHelper{
