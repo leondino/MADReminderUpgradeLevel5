@@ -22,11 +22,13 @@ class MainActivity : AppCompatActivity() {
 
     private  val reminders = arrayListOf<Reminder>()
     private val reminderAdaptor = ReminderAdaptor(reminders)
+    private lateinit var reminderRepository: ReminderRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
+        reminderRepository =  ReminderRepository(this)
 
         initViews()
     }
@@ -36,10 +38,18 @@ class MainActivity : AppCompatActivity() {
         rvReminders.adapter = reminderAdaptor
         rvReminders.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
         createItemTouchHelper().attachToRecyclerView(rvReminders)
+        getRemindersFromDatabase()
 
         fab.setOnClickListener {
             startAddActivity()
         }
+    }
+
+    private fun getRemindersFromDatabase(){
+        val reminders = reminderRepository.getAllReminders()
+        this@MainActivity.reminders.clear()
+        this@MainActivity.reminders.addAll(reminders)
+        reminderAdaptor.notifyDataSetChanged()
     }
 
     private fun startAddActivity(){
@@ -53,21 +63,11 @@ class MainActivity : AppCompatActivity() {
             when(requestCode){
                 ADD_REMINDER_REQUEST_CODE -> {
                     val reminder = data!!.getParcelableExtra<Reminder>(EXTRA_REMINDER)
-                    reminders.add(reminder)
-                    reminderAdaptor.notifyDataSetChanged()
+                    reminderRepository.insertReminder(reminder)
+                    getRemindersFromDatabase()
                 }
             }
         }
-    }
-
-    private fun addReminder(reminder: String){
-    //    if (reminder.isNotBlank()){
-    //        reminders.add((Reminder((reminder))))
-    //        reminderAdaptor.notifyDataSetChanged()
-    //        etReminder.text?.clear()
-    //    } else{
-    //        Snackbar.make(etReminder, "You must fill in the input field!", Snackbar.LENGTH_SHORT).show()
-    //    }
     }
 
     private fun createItemTouchHelper() : ItemTouchHelper{
@@ -82,8 +82,9 @@ class MainActivity : AppCompatActivity() {
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position =  viewHolder.adapterPosition
-                reminders.removeAt(position)
-                reminderAdaptor.notifyDataSetChanged()
+                val reminderToDelete = reminders[position]
+                reminderRepository.deleteReminder(reminderToDelete)
+                getRemindersFromDatabase()
             }
 
         }
